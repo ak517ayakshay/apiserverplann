@@ -4,16 +4,6 @@
 
 This document outlines the architecture for the ALYF API Server, implementing a modern, scalable, and maintainable system following the Function-First Model-Service-Controller (MSC) architecture pattern. This design prioritizes business domain cohesion while ensuring proper separation of concerns, optimizing for both developer productivity and system performance.
 
-## Architectural Overview
-
-The ALYF API Server architecture follows a domain-driven, function-first organization with internal MSC layering. This hybrid approach delivers several key advantages:
-
-- **Domain Cohesion**: Related functionality is grouped together, making the codebase more intuitive to navigate
-- **Clear Boundaries**: Each functional area has well-defined responsibilities
-- **Separation of Concerns**: MSC pattern within each functional area separates data models, business logic, and API endpoints
-- **Maintainability**: Modular structure facilitates targeted changes with minimal cross-module impact
-- **Scalability**: Independent functional areas can be scaled or migrated to microservices as needed
-- **Testability**: Clean separation of logic layers enables comprehensive testing at each level
 
 ## Directory Structure
 
@@ -77,82 +67,6 @@ Each functional area implements the Model-Service-Controller (MSC) pattern:
 - Delegate business logic to services
 - Return appropriate responses and handle errors
 
-### API Structure and Versioning
-
-The API design follows RESTful principles with consistent URL patterns:
-- Provider-facing endpoints under `/apc/...`
-- Member-facing endpoints under `/v1/member/...`
-- Internal endpoints under `/internal/...`
-
-API versioning is implemented at the path level (e.g., `/v1/...`, `/v2/...`) to allow for backward compatibility while enabling evolution of the API.
-
-## Technical Implementation
-
-### Technology Stack
-
-- **Framework**: FastAPI for high performance and automatic OpenAPI documentation
-- **Data Validation**: Pydantic for robust schema validation
-- **Database Access**: Async database clients for non-blocking performance
-- **Authentication**: JWT-based authentication with role-based access control
-- **Documentation**: Auto-generated OpenAPI documentation with SwaggerUI
-
-### Performance Considerations
-
-- Async I/O throughout the stack for maximum throughput
-- Optimized database queries using efficient indexing strategies
-- Connection pooling for database resources
-- Caching layer for frequently accessed data
-- Horizontal scalability through stateless design
-
-### Security Measures
-
-- Comprehensive input validation using Pydantic models
-- Role-based access control at controller level
-- JWT authentication with proper signature verification
-- Secure password handling with modern hashing algorithms
-- Protection against common web vulnerabilities (OWASP Top 10)
-
-## Development Workflow
-
-### Project Structure Benefits
-
-This architecture delivers significant benefits to the development workflow:
-
-1. **Onboarding Efficiency**: New developers can understand the system by focusing on specific functional areas
-2. **Feature Development**: Changes for new features are localized to relevant modules
-3. **Bug Fixing**: Issues can be isolated to specific layers (model, service, or controller)
-4. **Testing**: Each layer can be tested independently with appropriate mocking
-5. **Deployment**: Functional areas can be deployed independently if needed
-
-### Testing Strategy
-
-- **Unit Tests**: Test individual components in isolation
-- **Integration Tests**: Verify interactions between components
-- **End-to-End Tests**: Validate complete workflows
-
-## Future Considerations
-
-This architecture is designed to evolve with the needs of the business:
-
-- **Microservices Migration**: Functional areas can be extracted into separate microservices if needed
-- **Scaling Strategy**: High-traffic components can be scaled independently
-- **Feature Expansion**: New functional areas can be added with minimal impact on existing code
-- **Performance Optimization**: Critical paths can be optimized without affecting the overall architecture
-
-## Implementation Timeline
-
-The implementation follows a phased approach:
-
-1. **Phase 1**: Initial structure setup and core framework implementation
-2. **Phase 2**: Models implementation with validation
-3. **Phase 3**: Services implementation with business logic
-4. **Phase 4**: Controllers implementation with API endpoints
-5. **Phase 5**: Testing and optimization
-6. **Phase 6**: Documentation and deployment
-
-## Conclusion
-
-The ALYF API Server architecture represents a modern, scalable approach to building complex systems. By combining domain-driven design with the MSC pattern, we achieve both business alignment and technical excellence. This architecture positions ALYF for sustained growth while maintaining high development velocity and system quality.
 
 ## API Endpoints by Category
 
