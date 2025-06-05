@@ -1,23 +1,37 @@
-# API Server Reorganization Plan
+# ALYF API Server Architecture
 
-## Overview
+## Executive Summary
 
-This reorganization plan addresses the issue of having all logic within router files by creating a modular, category-based structure. Each module is divided into subcategories based on functionality, with each subcategory containing its own router, service, and models.
+This document outlines the architecture for the ALYF API Server, implementing a modern, scalable, and maintainable system following the Function-First Model-Service-Controller (MSC) architecture pattern. This design prioritizes business domain cohesion while ensuring proper separation of concerns, optimizing for both developer productivity and system performance.
+
+## Architectural Overview
+
+The ALYF API Server architecture follows a domain-driven, function-first organization with internal MSC layering. This hybrid approach delivers several key advantages:
+
+- **Domain Cohesion**: Related functionality is grouped together, making the codebase more intuitive to navigate
+- **Clear Boundaries**: Each functional area has well-defined responsibilities
+- **Separation of Concerns**: MSC pattern within each functional area separates data models, business logic, and API endpoints
+- **Maintainability**: Modular structure facilitates targeted changes with minimal cross-module impact
+- **Scalability**: Independent functional areas can be scaled or migrated to microservices as needed
+- **Testability**: Clean separation of logic layers enables comprehensive testing at each level
 
 ## Directory Structure
 
 ```
 src/
-├── apc/                      # APC-specific code
+├── apc/                      # APC-specific code (Provider-facing)
 │   ├── auth/                 # Authentication-related endpoints
+│   │   ├── models/           # Auth data models
+│   │   ├── services/         # Auth business logic
+│   │   └── controllers/      # Auth request handlers
 │   ├── member_management/    # Member management functionality
-│   ├── actions/              # Action endpoints (member/provider actions)
+│   ├── actions/              # Action endpoints
 │   ├── vitals/               # Vitals-related endpoints
 │   ├── reports/              # Report generation endpoints
-│   ├── clinical/             # Clinical data endpoints (SOAP notes, etc.)
+│   ├── clinical/             # Clinical data endpoints
 │   ├── annotations/          # Annotation-related endpoints
 │   ├── external_events/      # External events functionality
-│   └── visualization/        # Visualization and dashboard endpoints
+│   └── visualization/        # Visualization endpoints
 │
 ├── member/                   # Member-specific code
 │   ├── profile/              # Member profile management
@@ -25,7 +39,7 @@ src/
 │   ├── auth/                 # Member authentication
 │   ├── dashboards/           # Member dashboards
 │   ├── feedback/             # Member feedback functionality
-│   ├── summary/              # Summary endpoints (clinical, admin)
+│   ├── summary/              # Summary endpoints
 │   └── actions/              # Member actions
 │
 ├── internal/                 # Internal API code
@@ -34,176 +48,214 @@ src/
 │   ├── logging/              # Logging functionality
 │   └── reports/              # Internal reports
 │
-├── auth/                     # Authentication-related code
-│   ├── provider_auth/        # Provider authentication
-│   ├── member_auth/          # Member authentication
-│   ├── token/                # Token management
-│   └── middleware/           # Auth middleware
-│
-├── common/                   # Shared functionality
-│   ├── utils/                # General utilities
-│   ├── models/               # Shared data models
-│   ├── services/             # Shared services
-│   ├── middlewares/          # FastAPI middleware
-│   └── validators/           # Input validation
-│
 └── main.py                   # Main application entry point
 ```
 
-## Module Structure
+## Architecture Components
 
-Each subcategory will have the following structure:
+### MSC Pattern Implementation
 
-```
-subcategory/
-├── router.py       # Route definitions only
-├── service.py      # Business logic and data operations
-└── models.py       # Data models (optional)
-```
+Each functional area implements the Model-Service-Controller (MSC) pattern:
 
-## Endpoint Mapping
+#### Models
+- Define data structures and schemas
+- Handle validation logic and type safety
+- Implement serialization/deserialization
+- Enforce data integrity constraints
 
-### APC Endpoints
+#### Services
+- Implement business logic independent of transport layer
+- Handle data processing and transformations
+- Manage interactions with databases and external systems
+- Enforce business rules and policies
+- Remain stateless and optimized for reuse
 
-#### Auth
-- `/apc/login`
-- `/apc/login/validate_2fa`
-- `/apc/login/resend_2fa`
-- `/apc/forget_password`
+#### Controllers
+- Handle HTTP request/response cycle
+- Perform authentication and authorization checks
+- Validate input data via models
+- Delegate business logic to services
+- Return appropriate responses and handle errors
+
+### API Structure and Versioning
+
+The API design follows RESTful principles with consistent URL patterns:
+- Provider-facing endpoints under `/apc/...`
+- Member-facing endpoints under `/v1/member/...`
+- Internal endpoints under `/internal/...`
+
+API versioning is implemented at the path level (e.g., `/v1/...`, `/v2/...`) to allow for backward compatibility while enabling evolution of the API.
+
+## Technical Implementation
+
+### Technology Stack
+
+- **Framework**: FastAPI for high performance and automatic OpenAPI documentation
+- **Data Validation**: Pydantic for robust schema validation
+- **Database Access**: Async database clients for non-blocking performance
+- **Authentication**: JWT-based authentication with role-based access control
+- **Documentation**: Auto-generated OpenAPI documentation with SwaggerUI
+
+### Performance Considerations
+
+- Async I/O throughout the stack for maximum throughput
+- Optimized database queries using efficient indexing strategies
+- Connection pooling for database resources
+- Caching layer for frequently accessed data
+- Horizontal scalability through stateless design
+
+### Security Measures
+
+- Comprehensive input validation using Pydantic models
+- Role-based access control at controller level
+- JWT authentication with proper signature verification
+- Secure password handling with modern hashing algorithms
+- Protection against common web vulnerabilities (OWASP Top 10)
+
+## Development Workflow
+
+### Project Structure Benefits
+
+This architecture delivers significant benefits to the development workflow:
+
+1. **Onboarding Efficiency**: New developers can understand the system by focusing on specific functional areas
+2. **Feature Development**: Changes for new features are localized to relevant modules
+3. **Bug Fixing**: Issues can be isolated to specific layers (model, service, or controller)
+4. **Testing**: Each layer can be tested independently with appropriate mocking
+5. **Deployment**: Functional areas can be deployed independently if needed
+
+### Testing Strategy
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Verify interactions between components
+- **End-to-End Tests**: Validate complete workflows
+
+## Future Considerations
+
+This architecture is designed to evolve with the needs of the business:
+
+- **Microservices Migration**: Functional areas can be extracted into separate microservices if needed
+- **Scaling Strategy**: High-traffic components can be scaled independently
+- **Feature Expansion**: New functional areas can be added with minimal impact on existing code
+- **Performance Optimization**: Critical paths can be optimized without affecting the overall architecture
+
+## Implementation Timeline
+
+The implementation follows a phased approach:
+
+1. **Phase 1**: Initial structure setup and core framework implementation
+2. **Phase 2**: Models implementation with validation
+3. **Phase 3**: Services implementation with business logic
+4. **Phase 4**: Controllers implementation with API endpoints
+5. **Phase 5**: Testing and optimization
+6. **Phase 6**: Documentation and deployment
+
+## Conclusion
+
+The ALYF API Server architecture represents a modern, scalable approach to building complex systems. By combining domain-driven design with the MSC pattern, we achieve both business alignment and technical excellence. This architecture positions ALYF for sustained growth while maintaining high development velocity and system quality.
+
+## API Endpoints by Category
+
+### APC (Provider-Facing) Endpoints
+
+#### Authentication
+- `POST /login`: Provider authentication (authenticate)
+- `POST /login/validate_2fa`: Validate two-factor authentication (validate_2fa)
+- `POST /login/resend_2fa`: Resend 2FA token (resend_2fa)
+- `POST /forget_password`: Initiate password reset flow (forget_password)
 
 #### Member Management
-- `/apc/member/add`
-- `/apc/member/update`
-- `/apc/v1/member/get`
+- `POST /member/add`: Add new member (apc_member_add)
+- `POST /member/update`: Update member information (apc_member_update)
+- `POST /actions/member`: Perform actions on members (apc_actions_member)
+- `GET /v1/member/get`: Get member data (get_member_data)
 
-#### Actions
-- `/apc/actions/member`
-- `/apc/actions/provider`
-- `/apc/v2/actions/provider`
-
-#### Vitals
-- `/apc/get_vitals`
-- `/apc/vital_observations_timeseries`
-- `/apc/vital_observations_aggregations`
-
-#### Reports
-- `/apc/reports/rpm/get_reports`
-- `/apc/reports/rpm/refresh_reports`
-- `/apc/reports/member_admin/get_reports`
-- `/apc/reports/member_admin/refresh_reports`
-- `/apc/reports/billing/get_reports`
-- `/apc/reports/member_data_analytics/get_reports`
-- `/apc/reports/provider_data_analytics/get_reports`
-
-#### Clinical
-- `/apc/v2/get_soap_draft`
-- `/apc/soap/create_soap_draft`
-- `/apc/soap/get_soap_notes`
-- `/apc/soap/put_soap_note`
-- `/apc/get_soap_draft`
-- `/apc/get_clinical_assessments/ros_and_risk`
-- `/apc/get_clinical_assessments/daily_rounds`
-- `/apc/get_scores`
-
-#### Annotations
-- `/apc/member/annotations/get`
-- `/apc/member/annotations/add`
-- `/apc/member/annotations/docs_for_smartplots`
-
-#### External Events
-- `/apc/external_events/create_events`
-- `/apc/external_events/get_events`
-- `/apc/external_events/create_event_from_plain_description`
+#### Provider Configuration
+- `POST /actions/provider`: Perform provider actions (apc_actions_provider)
+- `POST /v2/actions/provider`: Enhanced provider actions (v2_apc_actions_provider)
+- `POST /v1/apc/provider/config_update`: Update provider configuration (provider_config_update)
+- `GET /meta_info`: Get metadata information (get_meta_info)
+- `GET /provider/generate_signup_link`: Generate signup link (generate_signup_link)
 
 #### Visualization
-- `/apc/adaptive_visualization/get_current_config`
-- `/apc/adaptive_visualization/validate_panel_config`
-- `/apc/adaptive_visualization/member_dashboards`
-- `/apc/adaptive_visualization/get_panel_config_proposal`
-- `/apc/adaptive_visualization/raw_llm_query`
-- `/apc/generate_n_vitals_panel_url`
+- `GET /adaptive_visualization/get_current_config`: Get current visualization config (adaptive_visualization_get_config)
+- `POST /adaptive_visualization/validate_panel_config`: Validate panel configuration (adaptive_visualization_validate_panel_config)
+- `GET /adaptive_visualization/member_dashboards`: Get member dashboards (adaptive_visualization_member_dashboards)
+- `POST /adaptive_visualization/get_panel_config_proposal`: Get panel config proposal (adaptive_visualization_get_panel_config_proposal)
+- `GET /adaptive_visualization/get_panel_config_proposal`: Get panel config proposal (adaptive_visualization_get_panel_config_proposal)
+- `GET /adaptive_visualization/raw_llm_query`: Execute raw LLM query (adaptive_visualization_raw_llm_query)
+- `POST /generate_n_vitals_panel_url`: Generate vitals panel URL (generate_n_vitals_panel_url)
+- `POST /get_vitals`: Get detailed vitals (get_vitals_detail)
 
-### Member Endpoints
+#### Clinical Assessments
+- `GET /get_clinical_assessments/ros_and_risk`: Get ROS and risk assessments (apc_get_clinical_assessments_ros_and_risk)
+- `GET /get_scores`: Get clinical scores (apc_get_scores)
+- `POST /get_clinical_assessments/daily_rounds`: Get daily rounds assessments (apc_get_clinical_assessments_daily_rounds)
+- `POST /vital_observations_timeseries`: Get vital observations timeseries (api_vital_observations_timeseries)
+- `POST /vital_observations_aggregations`: Get vital observations aggregations (api_vital_observations_aggregations)
+- `GET /apc/get_schema`: Get schema information (get_schema)
+- `GET /apc/secure_query`: Execute secure query (secure_query)
+- `GET /member/get_daily_recording_report`: Get daily recording report (apc_api_member_get_daily_recording_report)
 
-#### Profile
-- `/member/add`
-- `/member/v2/add`
-- `/member/update`
-- `/member/get`
-- `/member/v2/get`
-- `/member/delete`
+#### SOAP Notes
+- `GET /v2/get_soap_draft`: Get SOAP draft v2 (get_soap_draft_v2)
+- `POST /soap/create_soap_draft`: Create SOAP draft (soap_create_draft)
+- `POST /soap/get_soap_notes`: Get SOAP notes (soap_get_notes)
+- `PUT /soap/put_soap_note`: Update SOAP note (soap_put_note)
+- `POST /get_soap_draft`: Get SOAP draft (get_soap_draft)
 
-#### Vitals
-- `/member/get_member_vitals`
-- `/member/set_vitals`
-- `/member/v2/{member_id}/set_vitals`
-- `/member/vital_observations_aggregations`
+#### AI Interaction
+- `GET /v1/ask_alyf/get_message_history`: Get message history (get_message_history_endpoint)
+- `DELETE /v1/apc/ask_alyf/clear_message_history`: Clear message history (clear_message_history)
+- `GET /ask_alyf/get_message_history`: Get Alyf message history (ask_alyf_get_message_history)
+- `GET /ask_alyf/clear_message_history`: Clear Alyf message history (ask_alyf_clear_message_history)
+- `GET /ask_alyf/get_full_response`: Get full response from Alyf (ask_alyf_get_full_response)
 
-#### Auth
-- `/member/get_auth_url`
-- `/member/v2/get_auth_link`
-- `/member/v2/deauth`
-- `/member/generate_otp`
-- `/member/verify_otp`
+#### Reports
+- `POST /reports/rpm/refresh_reports`: Refresh RPM reports (reports_rpm_refresh_reports)
+- `POST /reports/rpm/get_reports`: Get RPM reports (reports_rpm_get_reports)
+- `GET /reports/member_admin/refresh_reports`: Refresh member admin reports (reports_member_admin_refresh_reports)
+- `GET /reports/member_admin/get_reports`: Get member admin reports (reports_member_admin_get_reports)
+- `GET /reports/member_admin/get_html_report`: Get member admin HTML report (reports_member_admin_get_reports)
+- `POST /reports/billing/get_reports`: Get billing reports (reports_billing_get_reports)
+- `POST /reports/member_data_analytics/get_reports`: Get member analytics reports (reports_member_analytics_get_reports)
+- `POST /reports/provider_data_analytics/get_reports`: Get provider analytics reports (reports_provider_analytics_get_reports)
 
-#### Dashboards
-- `/member/member_dashboards`
-- `/member/v2/member_dashboards`
+### Member-Facing Endpoints
 
-#### Feedback
-- `/member/feedback`
-- `/member/set_ama_info`
+#### Authentication
+- `POST /v1/member/login`: Member login (member_login)
+- `POST /v1/member/login_by_code`: Login by code (member_login_by_code)
+- `POST /v1/member/reset_password`: Reset password (member_reset_password)
 
-#### Summary
-- `/member/v2/clinical_summary`
-- `/member/v2/admin_summary`
+#### Profile Management
+- `GET /v1/member/profile`: Get member profile (get_member_profile)
+- `POST /v1/member/update_profile`: Update member profile (update_member_profile)
+- `POST /v1/member/notifications/update_settings`: Update notification settings (update_notification_settings)
 
-#### Actions
-- `/member/actions/member`
+#### Vitals Management
+- `POST /v1/member/set_vitals`: Set member vitals (set_member_vitals)
+- `GET /v1/member/get_vitals`: Get member vitals (get_member_vitals)
+- `POST /v1/member/{member_id}/set_vitals`: Set vitals for specific member (set_vitals_v2)
+- `GET /external_events/get_events`: Get external events (external_events_get_events)
+- `POST /external_events/create_events`: Create external events (external_events_create_events)
+- `GET /external_events/create_event_from_plain_description`: Create event from description (external_events_create_event_from_plain_description)
+- `GET /member/annotations/get`: Get annotations (get_annotations)
+- `POST /member/annotations/add`: Add annotation (add_annotation)
+- `POST /member/annotations/docs_for_smartplots`: Get docs for smartplots (docs_for_smartplots)
+
+#### Communication
+- `POST /v1/member/send_otp`: Send OTP (send_otp)
+- `POST /v1/member/verify_otp`: Verify OTP (verify_otp)
+- `GET /v1/member/notifications`: Get notifications (get_notifications)
+- `POST /v1/member/notifications/mark_read`: Mark notifications as read (mark_notifications_read)
 
 ### Internal Endpoints
 
 #### Provider Management
-- `/internal/provider/show`
-- `/internal/provider/add`
-- `/internal/provider/delete`
-- `/internal/provider/update`
-- `/internal/provider/email_update`
-- `/internal/provider/get_config`
-- `/internal/provider/set_config`
+- `POST /internal/admin/create_provider`: Create provider (create_provider)
+- `GET /internal/admin/get_provider`: Get provider (get_provider)
+- `POST /internal/admin/update_provider`: Update provider (update_provider)
 
-#### Analytics
-- `/internal/log_analytics`
-- `/internal/member_analytics`
-
-#### Logging
-- `/internal/generic_logger`
-
-#### Reports
-- `/internal/reports/refresh_reports`
-
-## Migration Strategy
-
-1. Create the new directory structure
-2. For each endpoint:
-   - Create a router.py file in the appropriate subcategory directory
-   - Create a service.py file with the business logic
-   - Move the implementation from the original router file to the new service file
-   - Update the router to use the new service
-3. Update main.py to include the new routers
-4. Test thoroughly to ensure functionality is preserved
-
-## Files Per Subcategory
-
-Each subcategory should contain:
-
-1. `router.py` - Contains only route definitions and minimal request/response handling
-2. `service.py` - Contains all business logic extracted from the original router
-3. `models.py` (optional) - Contains subcategory-specific data models
-
-## Naming Conventions
-
-- Router files: `router.py`
-- Service files: `service.py`
-- Model files: `models.py`
-- Utility files: descriptive name with `_utils.py` suffix (e.g., `validation_utils.py`) 
+#### Relay Functionality
+- `* /api/relay/{service}/{path:path}`: Relay request to another service (relay_request) 
